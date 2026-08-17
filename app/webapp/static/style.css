@@ -1,0 +1,215 @@
+:root {
+  --primair: #1A4E8C;
+  --accent: #2E6DB4;
+  --licht: #EAF1FA;
+  --grijs: #6b7280;
+  --rand: #dbe4ee;
+  --groen: #1e7e34;
+  --oranje: #b45309;
+  --rood: #b91c1c;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", Calibri, Arial, sans-serif;
+  color: #1f2937;
+  background: #f7f9fc;
+}
+
+.topbar {
+  background: var(--primair);
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 28px;
+}
+.topbar .brand { color: #fff; font-weight: 600; font-size: 1.1rem; text-decoration: none; }
+.topbar .settings-link { color: #dce8f7; text-decoration: none; font-size: 0.9rem; }
+.topbar .settings-link:hover { color: #fff; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 28px; }
+
+h1 { color: var(--primair); font-weight: 600; }
+h2 { color: var(--primair); font-weight: 600; font-size: 1.15rem; }
+
+.card {
+  background: #fff;
+  border: 1px solid var(--rand);
+  border-radius: 8px;
+  padding: 22px;
+  margin-bottom: 22px;
+}
+
+label { display: block; margin-bottom: 12px; font-size: 0.9rem; color: #374151; }
+input[type=text], input[type=password], select, textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--rand);
+  border-radius: 5px;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+.btn-primary, .btn-secondary {
+  display: inline-block;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--primair); }
+.btn-primary:disabled { background: #a9b8c9; cursor: not-allowed; }
+.btn-secondary { background: #fff; color: var(--primair); border: 1px solid var(--accent); }
+.btn-secondary:hover { background: var(--licht); }
+.btn-link { background: none; border: none; color: var(--rood); cursor: pointer; font-size: 0.85rem; }
+.btn-danger { color: var(--rood); border-color: var(--rood); }
+.btn-danger:hover { background: #fee2e2; }
+.settings-acties { display: flex; gap: 10px; }
+
+.muted { color: var(--grijs); font-size: 0.9rem; }
+.warning { color: var(--oranje); font-size: 0.88rem; }
+.warning-blok { background: #fff3cd; border: 1px solid #ffe69c; border-radius: 6px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.88rem; }
+.verborgen { display: none !important; }
+
+/* Projectoverzicht */
+.project-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.project-card {
+  position: relative; background: #fff; border: 1px solid var(--rand); border-radius: 8px;
+  transition: border-color .15s, box-shadow .15s;
+  transform-origin: center center;
+}
+.project-card:hover { border-color: var(--accent); box-shadow: 0 2px 10px rgba(26,78,140,0.08); }
+.project-card-link { display: block; padding: 16px; text-decoration: none; color: inherit; }
+.project-card-naam { font-weight: 600; color: var(--primair); margin-bottom: 4px; padding-right: 22px; }
+.project-card-meta { font-size: 0.85rem; color: var(--grijs); }
+
+.project-delete-btn {
+  position: absolute; top: 8px; right: 8px; z-index: 2;
+  width: 26px; height: 26px; border-radius: 50%; border: none; background: transparent;
+  color: #b0b8c4; font-size: 0.95rem; cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s, transform .15s;
+}
+.project-delete-btn:hover { background: #fee2e2; color: var(--rood); transform: scale(1.15) rotate(-8deg); }
+.project-delete-btn:active { transform: scale(0.9) rotate(-8deg); }
+
+@keyframes project-verwijder-poof {
+  0%   { transform: scale(1) rotate(0deg); opacity: 1; }
+  25%  { transform: scale(1.04) rotate(-2deg); box-shadow: 0 0 0 3px #fee2e2; }
+  100% { transform: scale(0.15) rotate(14deg) translateY(24px); opacity: 0; }
+}
+.project-card.wordt-verwijderd {
+  animation: project-verwijder-poof 0.5s cubic-bezier(.36,.07,.19,.97) forwards;
+  pointer-events: none;
+}
+.badge { padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+.badge-concept { background: #fef3c7; color: #92400e; }
+.badge-ok { background: #d1fae5; color: #065f46; }
+.empty-state { color: var(--grijs); font-style: italic; }
+
+/* Project-detail */
+.project-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+
+.stappenbalk { display: flex; gap: 4px; margin-bottom: 22px; border-radius: 8px; overflow: hidden; }
+.stap {
+  flex: 1; text-align: center; padding: 10px 8px; background: #e5edf7; color: var(--primair);
+  font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.stap.actief { background: var(--primair); color: #fff; }
+.stap.uitgeschakeld { color: #9ca3af; cursor: default; background: #eef1f5; }
+
+.dropzone {
+  border: 2px dashed var(--accent); border-radius: 8px; padding: 26px; text-align: center;
+  color: var(--grijs); margin-bottom: 18px; background: var(--licht);
+}
+.dropzone.dragover { background: #d7e6f7; }
+.dropzone input[type=file] { display: none; }
+
+.doc-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+.doc-table th { text-align: left; font-size: 0.8rem; color: var(--grijs); padding: 6px 8px; border-bottom: 2px solid var(--rand); }
+.doc-table td { padding: 8px; border-bottom: 1px solid var(--rand); font-size: 0.9rem; vertical-align: top; }
+
+.status { padding: 2px 9px; border-radius: 10px; font-size: 0.78rem; font-weight: 600; }
+.status-wachten { background: #e5e7eb; color: #374151; }
+.status-bezig { background: #fef3c7; color: #92400e; }
+.status-klaar { background: #d1fae5; color: #065f46; }
+.status-fout { background: #fee2e2; color: #991b1b; }
+.fout-melding { color: var(--rood); font-size: 0.78rem; margin-top: 4px; }
+
+.fase-navigatie { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+.matrix-status-label { font-size: 0.85rem; color: var(--grijs); margin-left: auto; }
+
+.matrix-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.matrix-header-actions { display: flex; align-items: center; gap: 12px; }
+
+.matrix-totaal { font-weight: 700; color: var(--primair); margin-bottom: 12px; font-size: 1.05rem; }
+.matrix-totaal.fout { color: var(--rood); }
+
+.categorie-blok { border: 1px solid var(--rand); border-radius: 8px; margin-bottom: 14px; overflow: hidden; }
+.categorie-kop {
+  background: var(--licht); display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+}
+.categorie-kop input.cat-naam { font-weight: 700; color: var(--primair); border: none; background: transparent; font-size: 1rem; flex: 1; }
+.categorie-kop input.cat-weging { width: 70px; text-align: right; }
+.categorie-kop .cat-weging-suffix { color: var(--grijs); }
+.categorie-kop .btn-link { margin-left: auto; }
+
+table.criteria-table { width: 100%; border-collapse: collapse; }
+table.criteria-table th { font-size: 0.75rem; color: var(--grijs); text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rand); }
+table.criteria-table td { padding: 6px 10px; border-bottom: 1px solid #f0f2f5; vertical-align: top; }
+table.criteria-table input, table.criteria-table select, table.criteria-table textarea { font-size: 0.85rem; padding: 5px 6px; }
+table.criteria-table input.crit-weging { width: 60px; }
+table.criteria-table textarea { resize: vertical; min-height: 32px; }
+.knock-out-tag { background: #fde68a; color: #78350f; padding: 1px 8px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; }
+.bron-tekst { font-size: 0.78rem; color: var(--grijs); font-style: italic; }
+
+.categorie-footer { padding: 6px 14px; }
+
+/* Leveranciers/offertes (fase 4) */
+.stap-link { text-decoration: none; }
+.inline-form { display: flex; gap: 10px; margin-bottom: 18px; align-items: center; }
+.inline-form input[type=text] { flex: 1; margin-top: 0; }
+.leverancier-blok { border: 1px solid var(--rand); border-radius: 8px; padding: 14px; margin-bottom: 14px; }
+.leverancier-kop { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.leverancier-naam { font-weight: 700; color: var(--primair); flex: 1; }
+.dropzone-klein { padding: 12px; margin-bottom: 8px; font-size: 0.85rem; }
+.upload-label { color: var(--accent); cursor: pointer; text-decoration: underline; }
+.upload-label input[type=file] { display: none; }
+.leverancier-doc-lijst { list-style: none; padding: 0; margin: 0 0 10px 0; font-size: 0.85rem; }
+.leverancier-doc-lijst li { padding: 4px 0; border-bottom: 1px solid #f0f2f5; }
+
+/* Leverancier-detailpagina (fase 5/6) */
+.score-tabel { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.score-tabel th { text-align: left; font-size: 0.78rem; color: var(--grijs); padding: 8px 10px; border-bottom: 2px solid var(--rand); }
+.score-tabel td { padding: 8px 10px; border-bottom: 1px solid var(--rand); font-size: 0.88rem; vertical-align: top; }
+.score-tabel tr.categorie-rij td { background: var(--licht); font-weight: 700; color: var(--primair); }
+.score-ai { background: #eef4fb; color: var(--primair); padding: 1px 8px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; }
+.score-overschreven { background: #fde68a; color: #78350f; padding: 1px 8px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; }
+.vertrouwen-laag { color: var(--rood); }
+.vertrouwen-midden { color: var(--oranje); }
+.vertrouwen-hoog { color: var(--groen); }
+.citaat-tekst { font-style: italic; color: var(--grijs); font-size: 0.82rem; }
+.score-input { width: 60px; }
+.knock-out-radio-groep label { display: inline-block; margin-right: 10px; font-weight: 400; }
+
+/* Dashboard (fase 7) */
+.dashboard-tabel-wrap { overflow-x: auto; }
+.dashboard-tabel { border-collapse: collapse; width: 100%; }
+.dashboard-tabel th, .dashboard-tabel td { padding: 8px 12px; border-bottom: 1px solid var(--rand); font-size: 0.85rem; text-align: right; white-space: nowrap; }
+.dashboard-tabel th:first-child, .dashboard-tabel td:first-child { text-align: left; }
+.dashboard-tabel th { color: var(--grijs); font-size: 0.75rem; }
+.dashboard-tabel tr.rang-1 td:first-child { font-weight: 700; color: var(--primair); }
+.dashboard-tabel tr.uitgesloten-rij { opacity: 0.55; }
+.score-cel-hoog { background: #d1fae5; }
+.score-cel-midden { background: #fef3c7; }
+.score-cel-laag { background: #fee2e2; }
+.rang-badge { display: inline-block; width: 22px; height: 22px; border-radius: 50%; background: var(--primair); color: #fff; text-align: center; line-height: 22px; font-size: 0.78rem; font-weight: 700; margin-right: 6px; }
+.grafieken-rij { display: flex; gap: 24px; flex-wrap: wrap; margin: 20px 0; }
+.grafiek-kaart { background: #fff; border: 1px solid var(--rand); border-radius: 8px; padding: 16px; flex: 1; min-width: 320px; }

@@ -1,0 +1,24 @@
+# Geheimen — nooit committen
+.env
+
+# Virtuele omgeving
+.venv/
+__pycache__/
+*.pyc
+
+# Projectdata (documenten, database) — lokaal/per-deploy, hoort niet in de repository
+projects/
+*.db
+*.db-journal
+
+# Testartefacten
+tests/sample_*.docx
+tests/*.output
+
+# Server-logbestanden (ontstaan bij lokaal draaien)
+server_out.log
+server_err.log
+
+# Editor/OS
+.DS_Store
+Thumbs.db

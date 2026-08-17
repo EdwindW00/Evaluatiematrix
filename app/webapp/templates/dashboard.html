@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ project.naam }}{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="project-header">
+    <div>
+      <h1>Dashboard — {{ project.naam }}</h1>
+      <p class="muted">Vergelijking van {{ overzicht | length }} leverancier(s)</p>
+    </div>
+    <div class="project-actions">
+      <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn-secondary">← Terug naar project</a>
+      <a href="{{ url_for('export_full_route', project_id=project.id) }}" class="btn-primary">Exporteer volledig naar Excel</a>
+    </div>
+  </div>
+
+  {% if not overzicht %}
+  <p class="empty-state">Nog geen leveranciers gescoord. Ga naar het tabblad Offertes om te beginnen.</p>
+  {% else %}
+
+  <div class="card">
+    <h2>Ranking &amp; eindtotalen</h2>
+    <div class="dashboard-tabel-wrap">
+      <table class="dashboard-tabel">
+        <thead>
+          <tr>
+            <th>Leverancier</th>
+            {% for cat in matrix %}<th>{{ cat.naam }} ({{ cat.weging }}%)</th>{% endfor %}
+            <th>Eindtotaal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% set rang = namespace(n=0) %}
+          {% for o in overzicht %}
+          {% if not o.totalen.uitgesloten %}{% set rang.n = rang.n + 1 %}{% endif %}
+          <tr class="{{ 'rang-1' if rang.n == 1 and not o.totalen.uitgesloten else '' }} {{ 'uitgesloten-rij' if o.totalen.uitgesloten else '' }}">
+            <td>
+              {% if not o.totalen.uitgesloten %}<span class="rang-badge">{{ rang.n }}</span>{% endif %}
+              {{ o.leverancier.naam }}
+              {% if o.totalen.uitgesloten %}<span class="muted">(uitgesloten)</span>{% endif %}
+            </td>
+            {% for c in o.totalen.categorieen %}<td>{{ c.punten }}</td>{% endfor %}
+            <td><strong>{{ o.totalen.eindtotaal }}</strong></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grafieken-rij">
+    <div class="grafiek-kaart">
+      <h2>Eindscore-opbouw per leverancier</h2>
+      <div id="staafgrafiek"></div>
+    </div>
+    <div class="grafiek-kaart">
+      <h2>Vergelijking per categorie</h2>
+      <div id="radargrafiek"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Detailvergelijking per criterium</h2>
+    <label>Filter op categorie
+      <select id="categorie-filter">
+        <option value="">Alle categorieën</option>
+        {% for cat in matrix %}<option value="{{ cat.id }}">{{ cat.naam }}</option>{% endfor %}
+      </select>
+    </label>
+    <div class="dashboard-tabel-wrap">
+      <table class="dashboard-tabel" id="detail-tabel">
+        <thead>
+          <tr>
+            <th>Criterium</th>
+            {% for o in overzicht %}<th>{{ o.leverancier.naam }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for cat in matrix %}
+          {% for crit in cat.criteria %}
+          <tr data-cat-id="{{ cat.id }}">
+            <td>{{ crit.naam }}{% if crit.type == 'knock-out' %} <span class="knock-out-tag">KO</span>{% endif %}</td>
+            {% for o in overzicht %}
+            {% set rec = o.scores.get(crit.id) %}
+            <td>
+              {% if crit.type == 'knock-out' %}
+                {% if rec and rec.voldaan == 1 %}✓ voldaan{% elif rec and rec.voldaan == 0 %}✕ niet voldaan{% else %}—{% endif %}
+              {% else %}
+                {{ rec.score if rec and rec.score is not none else '—' }}
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  window.DASHBOARD_DATA = {
+    categorieen: {{ matrix | map(attribute='naam') | list | tojson }},
+    leveranciers: {{ overzicht | map(attribute='leverancier') | map(attribute='naam') | list | tojson }},
+    punten: {{ overzicht | map(attribute='totalen') | map(attribute='categorieen') | list | tojson }},
+    eindtotalen: {{ overzicht | map(attribute='totalen') | map(attribute='eindtotaal') | list | tojson }},
+    uitgesloten: {{ overzicht | map(attribute='totalen') | map(attribute='uitgesloten') | list | tojson }},
+  };
+</script>
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+{% endblock %}

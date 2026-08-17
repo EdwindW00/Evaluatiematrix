@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Instellingen — Evaluatiematrix{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Instellingen</h1>
+  <div class="card">
+    <h2>AI-provider &amp; API-key</h2>
+    <p class="muted">
+      Nodig voor AI-matrixgeneratie en AI-scoring. De key wordt alleen lokaal opgeslagen
+      in een <code>.env</code>-bestand in de projectmap — nooit gedeeld, nooit in code.
+      Alleen de tekst van je brondocumenten die je expliciet laat analyseren wordt naar het
+      gekozen AI-endpoint verstuurd; verder blijft alles lokaal op je computer.
+    </p>
+    {% if geconfigureerd %}
+    <p>Provider: <strong>{{ providers[huidige_provider].label }}</strong> — huidige key: <code>{{ api_key_masked }}</code> (ingesteld)</p>
+    {% else %}
+    <p class="warning">Nog geen API-key ingesteld — AI-functies werken nog niet.</p>
+    {% endif %}
+    <p class="muted">
+      Let op de key-prefix — een key van de verkeerde provider wordt altijd geweigerd:
+      OpenAI-keys beginnen met <code>sk-...</code>, OpenRouter-keys met <code>sk-or-v1-...</code>,
+      NVIDIA NIM-keys met <code>nvapi-...</code>.
+    </p>
+    <form method="post" id="instellingen-form">
+      <label>AI-provider
+        <select name="provider" id="provider-select">
+          {% for key, info in providers.items() %}
+          <option value="{{ key }}" data-default-model="{{ info.default_model }}" data-key-hint="{{ info.key_prefix_hint }}"
+                  {{ "selected" if key == huidige_provider else "" }}>{{ info.label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>API-key
+        <input type="password" name="api_key" id="api-key-input" placeholder="{{ providers[huidige_provider].key_prefix_hint }}">
+      </label>
+      <label>Model
+        <input type="text" name="model" id="model-input" value="{{ huidig_model }}" list="model-suggesties" autocomplete="off">
+        <datalist id="model-suggesties">
+          {% for key, info in providers.items() %}
+          {% for m in info.voorbeeldmodellen %}
+          <option value="{{ m }}" data-provider="{{ key }}">{{ info.label }}</option>
+          {% endfor %}
+          {% endfor %}
+        </datalist>
+        <span class="muted" id="model-hint">Voorbeelden voor {{ providers[huidige_provider].label }}: {{ providers[huidige_provider].voorbeeldmodellen | join(', ') }}</span>
+      </label>
+      <div class="settings-acties">
+        <button type="submit" class="btn-primary">Opslaan</button>
+        {% if geconfigureerd %}
+        <button type="submit" formaction="{{ url_for('delete_api_key') }}" formnovalidate
+                class="btn-secondary btn-danger" id="verwijder-key-btn">API-key verwijderen</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  const verwijderBtn = document.getElementById("verwijder-key-btn");
+  if (verwijderBtn) {
+    verwijderBtn.addEventListener("click", (e) => {
+      if (!confirm("Weet je zeker dat je de opgeslagen API-key wilt verwijderen? AI-functies werken dan niet meer totdat je een nieuwe key invult.")) {
+        e.preventDefault();
+      }
+    });
+  }
+
+  // Bij wisselen van provider: keyveld-placeholder, modelveld en modelvoorbeelden meeveranderen
+  const VOORBEELDMODELLEN = {{ providers.values() | map(attribute='voorbeeldmodellen') | list | tojson }};
+  const PROVIDER_KEYS = {{ providers.keys() | list | tojson }};
+  const PROVIDER_LABELS = {{ providers.values() | map(attribute='label') | list | tojson }};
+
+  const providerSelect = document.getElementById("provider-select");
+  const apiKeyInput = document.getElementById("api-key-input");
+  const modelInput = document.getElementById("model-input");
+  const modelHint = document.getElementById("model-hint");
+  let vorigeDefault = providerSelect.selectedOptions[0].dataset.defaultModel;
+
+  providerSelect.addEventListener("change", () => {
+    const optie = providerSelect.selectedOptions[0];
+    const idx = PROVIDER_KEYS.indexOf(optie.value);
+    apiKeyInput.placeholder = optie.dataset.keyHint;
+    if (!modelInput.value.trim() || modelInput.value.trim() === vorigeDefault) {
+      modelInput.value = optie.dataset.defaultModel;
+    }
+    vorigeDefault = optie.dataset.defaultModel;
+    if (idx !== -1) {
+      modelHint.textContent = `Voorbeelden voor ${PROVIDER_LABELS[idx]}: ${VOORBEELDMODELLEN[idx].join(", ")}`;
+    }
+  });
+</script>
+{% endblock %}

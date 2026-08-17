@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Projecten — Evaluatiematrix{% endblock %}
+{% block content %}
+<div class="container">
+  <h1>Tenderprojecten</h1>
+
+  <form class="card new-project-form" method="post" action="{{ url_for('create_project') }}">
+    <h2>Nieuw project</h2>
+    <label>Naam tender/opdrachtgever
+      <input type="text" name="naam" placeholder="bijv. Facility Services Tender – Klant X" required>
+    </label>
+    <label>Opdrachtgever (optioneel)
+      <input type="text" name="opdrachtgever" placeholder="bijv. Klant X B.V.">
+    </label>
+    <button type="submit" class="btn-primary">Project aanmaken</button>
+  </form>
+
+  <h2>Bestaande projecten</h2>
+  {% if projecten %}
+  <div class="project-list" id="project-list">
+    {% for p in projecten %}
+    <div class="project-card" data-project-id="{{ p.id }}">
+      <button class="project-delete-btn" data-project-id="{{ p.id }}" data-project-naam="{{ p.naam }}"
+              title="Project verwijderen" aria-label="Project verwijderen">🗑</button>
+      <a class="project-card-link" href="{{ url_for('project_detail', project_id=p.id) }}">
+        <div class="project-card-naam">{{ p.naam }}</div>
+        <div class="project-card-meta">
+          {% if p.opdrachtgever %}{{ p.opdrachtgever }} · {% endif %}
+          matrix: <span class="badge badge-{{ 'ok' if p.matrix_status == 'vastgesteld' else 'concept' }}">{{ p.matrix_status }}</span>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="empty-state verborgen" id="geen-projecten-tekst">Nog geen projecten. Maak hierboven je eerste project aan.</p>
+  {% else %}
+  <p class="empty-state" id="geen-projecten-tekst">Nog geen projecten. Maak hierboven je eerste project aan.</p>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  document.querySelectorAll(".project-delete-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const naam = btn.dataset.projectNaam;
+      if (!confirm(`Project "${naam}" definitief verwijderen? Dit verwijdert ook alle documenten, de matrix en alle scores. Dit kan niet ongedaan worden gemaakt.`)) return;
+
+      const card = btn.closest(".project-card");
+      card.classList.add("wordt-verwijderd");
+      await fetch(`/project/${btn.dataset.projectId}/delete`, { method: "POST" });
+      card.addEventListener("animationend", () => {
+        card.remove();
+        const lijst = document.getElementById("project-list");
+        if (lijst && !lijst.querySelector(".project-card")) {
+          lijst.remove();
+          const leeg = document.getElementById("geen-projecten-tekst");
+          if (leeg) leeg.classList.remove("verborgen");
+        }
+      }, { once: true });
+    });
+  });
+</script>
+{% endblock %}

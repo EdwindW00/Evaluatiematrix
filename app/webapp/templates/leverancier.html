@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ supplier.naam }} — {{ project.naam }}{% endblock %}
+{% block content %}
+<div class="container" data-project-id="{{ project.id }}" data-supplier-id="{{ supplier.id }}">
+  <div class="project-header">
+    <div>
+      <h1>{{ supplier.naam }}</h1>
+      <p class="muted">{{ project.naam }}</p>
+    </div>
+    <div class="project-actions">
+      <a href="{{ url_for('project_detail', project_id=project.id) }}#offertes" class="btn-secondary">← Terug naar project</a>
+    </div>
+  </div>
+
+  {% if totalen.uitgesloten %}
+  <div class="warning-blok">
+    <strong>Let op — deze leverancier is uitgesloten:</strong> niet voldaan aan knock-outcriterium
+    {{ totalen.gefaalde_knockout_criteria | join(', ') }}. De leverancier blijft hieronder volledig
+    zichtbaar (transparantie), maar telt niet mee in de ranking.
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div id="eindtotaal-blok" class="matrix-totaal">Eindtotaal (gewogen): {{ totalen.eindtotaal }} / 100</div>
+
+    {% for cat in matrix %}
+    <table class="score-tabel">
+      <thead>
+        <tr class="categorie-rij">
+          <td colspan="6">{{ cat.naam }} — weging {{ cat.weging }}%
+            <span class="cat-subtotaal" data-cat-id="{{ cat.id }}">(subtotaal: {{ totalen.categorieen | selectattr('categorie_id', 'equalto', cat.id) | map(attribute='punten') | first }})</span>
+          </td>
+        </tr>
+        <tr>
+          <th>Criterium</th>
+          <th>AI-beoordeling</th>
+          <th>Citaat / bron</th>
+          <th>Vertrouwen</th>
+          <th>Score / voldaan</th>
+          <th>Commentaar &amp; controle</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for crit in cat.criteria %}
+        {% set rec = scores.get(crit.id) %}
+        <tr data-crit-id="{{ crit.id }}" data-type="{{ crit.type }}">
+          <td>
+            <strong>{{ crit.naam }}</strong>
+            {% if crit.type == 'knock-out' %}<div class="knock-out-tag">Knock-out</div>{% else %}<div class="muted">Schaal {{ crit.schaal }}</div>{% endif %}
+            {% if crit.toelichting %}<div class="muted">{{ crit.toelichting }}</div>{% endif %}
+          </td>
+          <td>
+            {% if rec and rec.overschreven_door_gebruiker %}<span class="score-overschreven">door Edwin aangepast</span>{% elif rec %}<span class="score-ai">AI-score (ongewijzigd)</span>{% else %}<span class="muted">nog niet gescoord</span>{% endif %}
+            <div class="onderbouwing-tekst">{{ rec.onderbouwing if rec else '' }}</div>
+          </td>
+          <td><span class="citaat-tekst">{{ '"' + rec.citaat + '"' if rec and rec.citaat else '' }}</span></td>
+          <td>
+            {% set vertrouwen = rec.vertrouwen if rec else '' %}
+            <span class="{{ 'vertrouwen-hoog' if vertrouwen == 'duidelijk vermeld' else ('vertrouwen-midden' if vertrouwen == 'afgeleid, niet expliciet' else 'vertrouwen-laag') }}">{{ vertrouwen }}</span>
+          </td>
+          <td>
+            {% if crit.type == 'knock-out' %}
+            <select class="voldaan-select" data-crit-id="{{ crit.id }}">
+              <option value="" {{ "selected" if rec is none or rec.voldaan is none else "" }}>onbekend</option>
+              <option value="1" {{ "selected" if rec and rec.voldaan == 1 else "" }}>voldaan</option>
+              <option value="0" {{ "selected" if rec and rec.voldaan == 0 else "" }}>niet voldaan</option>
+            </select>
+            {% else %}
+            <input type="number" class="score-input" data-crit-id="{{ crit.id }}" value="{{ rec.score if rec and rec.score is not none else '' }}">
+            {% endif %}
+          </td>
+          <td>
+            <textarea class="commentaar-input" data-crit-id="{{ crit.id }}" placeholder="Eigen commentaar (verplicht bij overschrijven)">{{ (rec.gebruiker_commentaar if rec else '') or '' }}</textarea>
+            <label class="nader-verifieren-label">
+              <input type="checkbox" class="nader-verifieren-check" data-crit-id="{{ crit.id }}" {{ "checked" if rec and rec.nader_verifieren else "" }}>
+              nader te verifiëren met leverancier
+            </label>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='leverancier.js') }}"></script>
+{% endblock %}

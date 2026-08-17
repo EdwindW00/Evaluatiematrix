@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: evaluatiematrix
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app.wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 600
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.6
+      - key: APP_USERNAME
+        sync: false
+      - key: APP_PASSWORD
+        sync: false
+      - key: AI_PROVIDER
+        sync: false
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_MODEL
+        sync: false

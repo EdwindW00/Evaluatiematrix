@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}{{ project.naam }} — Evaluatiematrix{% endblock %}
+{% block content %}
+<div class="container" data-project-id="{{ project.id }}">
+  <div class="project-header">
+    <div>
+      <h1>{{ project.naam }}</h1>
+      {% if project.opdrachtgever %}<p class="muted">{{ project.opdrachtgever }}</p>{% endif %}
+    </div>
+    <div class="project-actions">
+      <a href="{{ url_for('index') }}" class="btn-secondary">← Alle projecten</a>
+    </div>
+  </div>
+
+  <nav class="stappenbalk">
+    <div class="stap actief" data-stap="upload">1. Brondocumenten</div>
+    <div class="stap" data-stap="matrix">2. Matrix genereren &amp; reviewen</div>
+    <div class="stap" data-stap="offertes">3. Offertes &amp; scoring</div>
+    <a class="stap stap-link" href="{{ url_for('dashboard', project_id=project.id) }}">4. Dashboard →</a>
+  </nav>
+
+  <!-- FASE 1: UPLOAD -->
+  <section class="fase-paneel" id="paneel-upload">
+    <div class="card">
+      <h2>Brondocumenten</h2>
+      <p class="muted">Upload de offerte-aanvraag, SLA's, contractvoorwaarden, PvE en overige bijlagen (PDF, Word, Excel, tekst).</p>
+      <div class="dropzone" id="dropzone">
+        <p>Sleep bestanden hierheen, of</p>
+        <input type="file" id="file-input" multiple accept=".pdf,.docx,.xlsx,.xls,.txt">
+        <label for="file-input" class="btn-secondary">kies bestanden</label>
+      </div>
+      <table class="doc-table" id="doc-table">
+        <thead><tr><th>Bestand</th><th>Type</th><th>Status</th><th></th></tr></thead>
+        <tbody id="doc-table-body">
+          {% for d in documenten %}
+          <tr data-doc-id="{{ d.id }}">
+            <td>{{ d.bestandsnaam }}</td>
+            <td>
+              <select class="doc-type-select" data-doc-id="{{ d.id }}">
+                {% for t in ["offerte-aanvraag", "SLA", "contractvoorwaarden", "PvE", "overig"] %}
+                <option value="{{ t }}" {{ "selected" if d.type == t else "" }}>{{ t }}</option>
+                {% endfor %}
+              </select>
+            </td>
+            <td><span class="status status-{{ d.status }}">{{ d.status }}</span>
+              {% if d.foutmelding %}<div class="fout-melding">{{ d.foutmelding }}</div>{% endif %}
+            </td>
+            <td><button class="btn-link doc-delete" data-doc-id="{{ d.id }}">verwijderen</button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="fase-navigatie">
+        <button class="btn-primary" id="ga-naar-matrix">Verder naar matrix →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FASE 2: MATRIX -->
+  <section class="fase-paneel verborgen" id="paneel-matrix">
+    <div class="card">
+      <div class="matrix-header">
+        <h2>Evaluatiematrix</h2>
+        <div class="matrix-header-actions">
+          {% if not ai_geconfigureerd %}
+          <span class="warning">Geen OpenAI API-key ingesteld — stel deze eerst in bij <a href="{{ url_for('settings') }}">Instellingen</a>.</span>
+          {% endif %}
+          <button class="btn-primary" id="genereer-matrix" {{ "disabled" if not ai_geconfigureerd else "" }}>Genereer conceptmatrix met AI</button>
+        </div>
+      </div>
+      <div id="onzekerheden-blok" class="warning-blok verborgen"></div>
+      <div id="matrix-totaal" class="matrix-totaal"></div>
+      <div id="matrix-container"></div>
+      <div class="fase-navigatie">
+        <button class="btn-secondary" id="voeg-categorie-toe">+ Categorie toevoegen</button>
+        <span class="matrix-status-label" id="matrix-status-label">Status: {{ project.matrix_status }}</span>
+        <button class="btn-primary" id="matrix-vaststellen">Matrix vaststellen</button>
+        <a class="btn-secondary" id="export-link" href="{{ url_for('export_matrix_route', project_id=project.id) }}">Exporteer matrix naar Excel</a>
+        <button class="btn-secondary" id="ga-naar-offertes">Verder naar offertes →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- FASE 3: OFFERTES -->
+  <section class="fase-paneel verborgen" id="paneel-offertes">
+    <div class="card">
+      <h2>Leveranciers &amp; offertes</h2>
+      {% if project.matrix_status != 'vastgesteld' %}
+      <p class="warning">De matrix is nog niet vastgesteld — scoring werkt het best op een vastgestelde matrix.</p>
+      {% endif %}
+      <form id="nieuwe-leverancier-form" class="inline-form">
+        <input type="text" id="nieuwe-leverancier-naam" placeholder="Naam leverancier" required>
+        <button type="submit" class="btn-primary">+ Leverancier toevoegen</button>
+      </form>
+
+      <div id="leveranciers-lijst">
+        {% for lev in leveranciers %}
+        <div class="leverancier-blok" data-supplier-id="{{ lev.id }}">
+          <div class="leverancier-kop">
+            <span class="leverancier-naam">{{ lev.naam }}</span>
+            <span class="status status-{{ 'fout' if lev.uitgesloten else ('klaar' if lev.status in ['gescoord', 'handmatig gecontroleerd'] else ('bezig' if lev.status == 'bezig' else 'wachten')) }}">
+              {{ 'uitgesloten (knock-out)' if lev.uitgesloten else lev.status }}
+            </span>
+            <a class="btn-secondary" href="{{ url_for('supplier_detail', project_id=project.id, supplier_id=lev.id) }}">Scores bekijken/controleren →</a>
+            <button class="btn-link leverancier-delete" data-supplier-id="{{ lev.id }}">verwijderen</button>
+          </div>
+          <div class="dropzone dropzone-klein" data-supplier-id="{{ lev.id }}">
+            <p>Sleep offerte(s) hierheen, of <label class="upload-label">kies bestanden<input type="file" class="leverancier-file-input" data-supplier-id="{{ lev.id }}" multiple accept=".pdf,.docx,.xlsx,.xls,.txt"></label></p>
+          </div>
+          <ul class="leverancier-doc-lijst" data-supplier-id="{{ lev.id }}">
+            {% for d in lev.documenten %}
+            <li data-doc-id="{{ d.id }}">{{ d.bestandsnaam }} — <span class="status status-{{ d.status }}">{{ d.status }}</span>
+              {% if d.foutmelding %}<span class="fout-melding">{{ d.foutmelding }}</span>{% endif %}
+              <button class="btn-link lev-doc-delete" data-doc-id="{{ d.id }}" data-supplier-id="{{ lev.id }}">✕</button>
+            </li>
+            {% endfor %}
+          </ul>
+          <button class="btn-primary scoor-leverancier" data-supplier-id="{{ lev.id }}" {{ "disabled" if not ai_geconfigureerd else "" }}>Scoor deze offerte met AI</button>
+        </div>
+        {% endfor %}
+      </div>
+      {% if not leveranciers %}
+      <p class="empty-state" id="geen-leveranciers-tekst">Nog geen leveranciers toegevoegd.</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  window.INITIAL_MATRIX = {{ matrix | tojson }};
+  window.PROJECT_ID = {{ project.id | tojson }};
+  window.AI_GECONFIGUREERD = {{ ai_geconfigureerd | tojson }};
+</script>
+{% endblock %}
