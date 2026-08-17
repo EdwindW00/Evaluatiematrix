@@ -1,5 +1,6 @@
 # Geheimen — nooit committen
 .env
+secrets.local.ps1
 
 # Virtuele omgeving
 .venv/

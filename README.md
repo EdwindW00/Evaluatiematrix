@@ -33,38 +33,46 @@ extractie+synthese voor grondigheid), matrix reviewen/vaststellen, leveranciers/
 toevoegen, AI-scoring, handmatige score-controle, vergelijkingsdashboard, en volledige
 Excel-export met scores en formules.
 
-## Hosten als publieke (sub)website (bijv. op Render)
+## Publiek bereikbaar maken — zelf hosten + gratis tunnel (huidige opzet)
 
-De app is een gewone Flask-applicatie en kan op elk Python-hostingplatform draaien.
-Voor Render.com (gratis/goedkope tier, koppelt automatisch aan deze GitHub-repository):
+In plaats van cloudhosting (die vrijwel altijd een creditcard vraagt, zelfs voor een
+"gratis" tier) draait de app gewoon lokaal op je eigen computer, en maakt een gratis
+tunnel-tool ([tunnelto.me](https://www.tunnelto.me/)) 'm bereikbaar op een eigen
+subdomein — zonder creditcard, zonder cloudkosten, en zonder dataverlies (alles blijft
+op je eigen schijf staan).
 
-1. Maak een gratis account op [render.com](https://render.com) en koppel je GitHub-account.
-2. **New +** → **Web Service** → kies deze repository (`Evaluatiematrix`). Render herkent
-   `render.yaml` automatisch (Python, `pip install -r requirements.txt`,
-   `gunicorn app.wsgi:app`).
-3. Zet bij **Environment** de volgende variabelen (nooit in code/git, alleen hier):
-   - `APP_USERNAME` / `APP_PASSWORD` — inlogbeveiliging voor de hele site (zonder deze
-     twee staat de app volledig open, dus stel ze altijd in bij een publieke deploy).
-   - `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL` — optioneel, kan ook later via het
-     **Instellingen**-scherm in de app zelf (dan schrijft de app naar een lokaal
-     `.env`-bestand op de server-schijf, dat *op de gratis Render-tier bij elke
-     herstart/redeploy verdwijnt* — voor blijvende instellingen zijn env vars hier
-     robuuster).
-4. Deploy. Render geeft een `https://<naam>.onrender.com`-adres.
-5. Voor een eigen subdomein (bijv. `matrix.testedwin.nl`): voeg dat toe bij Render onder
-   **Settings → Custom Domains** — Render toont dan een CNAME-doel. Zet dat CNAME-record
-   bij je domeinbeheer (Strato) voor het subdomein; testedwin.nl zelf (op Netlify) hoeft
-   niet aangeraakt te worden.
+**Eenmalig instellen:**
 
-**Let op — gratis Render-tier:**
-- De schijf is niet-persistent: geüploade documenten en de database (`projects/`)
-  verdwijnen bij elke herstart/redeploy/inactiviteit. Geschikt om te demonstreren/testen,
-  niet om er echt tenderdata langdurig in te bewaren. Voor permanente opslag is een
-  betaald abonnement met een *persistent disk* nodig.
-- De gratis service "slaapt" na een periode van inactiviteit; de eerste request daarna is
-  traag (koude start).
-- AI-aanroepen (vooral met een gratis/gedeeld AI-model) kunnen enkele minuten duren; de
-  gunicorn-workertimeout staat daarom op 600 seconden (`render.yaml`).
+1. `tunnelto` staat al geïnstalleerd (via Scoop). Maak een gratis account op
+   [tunnelto.me](https://www.tunnelto.me/) en haal je token/dashboard-gegevens op.
+2. Run `tunnelto` (zonder argumenten) in een PowerShell-venster om je account te
+   koppelen — dit vraagt om het token uit je tunnelto-dashboard.
+3. In je tunnelto-dashboard: voeg je eigen domein toe (bijv. `testedwin.nl`) en volg de
+   getoonde instructies om bij je domeinbeheer (**Strato**) een TXT-record (eigendom
+   bewijzen) en een wildcard A-record toe te voegen. Dit hoeft maar één keer.
+4. Kopieer `secrets.local.ps1.example` naar `secrets.local.ps1` en vul een gebruikersnaam
+   + wachtwoord in — dit bestand staat in `.gitignore` en komt dus nooit in de
+   GitHub-repository terecht.
+
+**Elke keer dat je de app publiek beschikbaar wilt maken:**
+
+1. Start de app: `.\start-publiek.ps1` (laat dit venster open staan — dit is de
+   inlogbeveiligde variant van `start.ps1`).
+2. Open een **tweede** PowerShell-venster en run: `tunnelto add matrix.testedwin.nl 5151`
+   (of jouw gekozen subdomein).
+3. De site is nu bereikbaar op dat subdomein, met inlogscherm ervoor. Sluit beide
+   vensters om 'm weer offline te halen.
+
+**Let op:** je computer moet aanstaan (en niet in slaapstand) wil de site bereikbaar
+zijn — dit is geen 24/7-cloudhosting, maar een gratis alternatief zonder de haken en ogen
+daarvan (creditcard, dataverlies op gratis tiers, doorlopende kosten).
+
+## Alternatief: wél cloudhosten (Render.com, kost ~$7/maand voor permanente opslag)
+
+De repository bevat ook `app/wsgi.py` en `render.yaml` voor het geval je later alsnog
+voor een 24/7-cloudoptie kiest. Render.com koppelt automatisch aan deze GitHub-repository
+(gunicorn, `render.yaml`-configuratie staat al klaar) — zie de git-historie van dit
+bestand voor de volledige stappen, of vraag het opnieuw uit.
 
 ## Projectdata (lokaal)
 
